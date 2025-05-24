@@ -2,16 +2,14 @@ import torch
 
 ###############################################
 
-EXP_NAME = "IAM-339-15-E3D3-LR0.00005-bs8"; RESUME = False
+EXP_NAME = "hwt_kor_lr0.00005"; RESUME = False
 
-DATASET = 'IAM'
-if DATASET == 'IAM':
-    DATASET_PATHS = 'files/IAM-32.pickle'
-    NUM_WRITERS = 339
-if DATASET == 'CVL':
-    DATASET_PATHS = 'files/CVL-32.pickle'
-    NUM_WRITERS = 283
-ENGLISH_WORDS_PATH = 'files/english_words.txt'
+DATASET = 'hwt_kor'
+if DATASET == 'hwt_kor':
+    DATASET_PATHS = 'files_kr/korean_handwriting.pkl'
+    NUM_WRITERS = 141
+
+ENGLISH_WORDS_PATH = 'files_kr/korean.txt'
 
 ###############################################
 
@@ -25,13 +23,15 @@ TN_NHEADS = 8
 TN_DIM_FEEDFORWARD = 512
 TN_ENC_LAYERS = 3
 TN_DEC_LAYERS = 3
-ALPHABET = 'Only thewigsofrcvdampbkuq.A-210xT5\'MDL,RYHJ"ISPWENj&BC93VGFKz();#:!7U64Q8?+*ZX/%'
-VOCAB_SIZE = len(ALPHABET)
+with open('files_kr/korean.txt', encoding='utf-8') as f:
+    base_alphabet = ''.join(line.strip() for line in f)
+ALPHABET = ' ' + base_alphabet
+VOCAB_SIZE = len(ALPHABET) + 1
 G_LR = 0.00005
 D_LR = 0.00005
 W_LR = 0.00005
 OCR_LR = 0.00005
-EPOCHS = 100000
+EPOCHS = 10
 NUM_CRITIC_GOCR_TRAIN = 2
 NUM_CRITIC_DOCR_TRAIN = 1
 NUM_CRITIC_GWL_TRAIN = 2
@@ -46,8 +46,8 @@ IS_CYCLE = False
 IS_KLD = False
 ADD_NOISE = False
 ALL_CHARS = False
-SAVE_MODEL = 5
-SAVE_MODEL_HISTORY = 100
+SAVE_MODEL = 10
+SAVE_MODEL_HISTORY = 10
 
 def init_project():
     import os, shutil

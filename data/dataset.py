@@ -34,7 +34,7 @@ def get_transform(grayscale=False, convert=True):
         transform_list.append(transforms.Grayscale(1))
 
     if convert:
-        transform_list += [transforms.ToTensor()]
+        transform_list += [transforms.Resize(32), transforms.ToTensor()]
         if grayscale:
             transform_list += [transforms.Normalize((0.5,), (0.5,))]
         else:
@@ -42,53 +42,55 @@ def get_transform(grayscale=False, convert=True):
 
     return transforms.Compose(transform_list)
 
-def load_itw_samples(folder_path, num_samples = 15):
+# def load_itw_samples(folder_path, num_samples = 15):
 
-  paths = glob.glob(f'{folder_path}/*')
-  paths = np.random.choice(paths, num_samples, replace = len(paths)<=num_samples)
+#   paths = glob.glob(f'{folder_path}/*')
+#   paths = np.random.choice(paths, num_samples, replace = len(paths)<=num_samples)
 
-  words = [os.path.basename(path_i)[:-4] for path_i in paths]
+#   words = [os.path.basename(path_i)[:-4] for path_i in paths]
 
-  imgs = [np.array(Image.open(i).convert('L')) for i in paths]
+#   imgs = [np.array(Image.open(i).convert('L')) for i in paths]
 
-  imgs =  [crop_(im) for im in imgs]
-  imgs = [cv2.resize(imgs_i, (int(32*(imgs_i.shape[1]/imgs_i.shape[0])), 32)) for imgs_i in imgs]
-  max_width = 192
+#   imgs =  [crop_(im) for im in imgs]
+#   imgs = [cv2.resize(imgs_i, (int(32*(imgs_i.shape[1]/imgs_i.shape[0])), 32)) for imgs_i in imgs]
+#   max_width = 192
 
-  imgs_pad = []
-  imgs_wids = []
+#   imgs_pad = []
+#   imgs_wids = []
 
-  trans_fn = get_transform(grayscale=True)
+#   trans_fn = get_transform(grayscale=True)
 
-  for img in imgs:
+#   for img in imgs:
 
-      img = 255 - img
-      img_height, img_width = img.shape[0], img.shape[1]
-      outImg = np.zeros(( img_height, max_width), dtype='float32')
-      outImg[:, :img_width] = img[:, :max_width]
+#       img = 255 - img
+#       img_height, img_width = img.shape[0], img.shape[1]
+#       outImg = np.zeros(( img_height, max_width), dtype='float32')
+#       outImg[:, :img_width] = img[:, :max_width]
 
-      img = 255 - outImg
+#       img = 255 - outImg
 
-      imgs_pad.append(trans_fn((Image.fromarray(img))))
-      imgs_wids.append(img_width)
+#       imgs_pad.append(trans_fn((Image.fromarray(img))))
+#       imgs_wids.append(img_width)
 
-  imgs_pad = torch.cat(imgs_pad, 0)
+#   imgs_pad = torch.cat(imgs_pad, 0)
 
-  return imgs_pad.unsqueeze(0).cuda(), torch.Tensor(imgs_wids).unsqueeze(0).cuda()
+#   return imgs_pad.unsqueeze(0).cuda(), torch.Tensor(imgs_wids).unsqueeze(0).cuda()
 
 
 class TextDataset():
 
-    def __init__(self, base_path = DATASET_PATHS,  num_examples = 15, target_transform=None):
+    def __init__(self, base_path = DATASET_PATHS,  num_examples = NUM_EXAMPLES, target_transform=None):
 
         self.NUM_EXAMPLES = num_examples
   
-        #base_path = DATASET_PATHS
-        file_to_store = open(base_path, "rb")
-        self.IMG_DATA = pickle.load(file_to_store)['train']
-        self.IMG_DATA  = dict(list( self.IMG_DATA.items())) #[:NUM_WRITERS])
+        base_path = DATASET_PATHS
+        with open(base_path, "rb") as f:
+            data = pickle.load(f)
+
+        self.IMG_DATA  = data['train'] #[:NUM_WRITERS])
         if 'None' in self.IMG_DATA.keys():
             del self.IMG_DATA['None']
+                    
         self.author_id = list(self.IMG_DATA.keys())
 
         self.transform = get_transform(grayscale=True)
@@ -119,7 +121,8 @@ class TextDataset():
         imgs = [np.array(self.IMG_DATA_AUTHOR[idx]['img'].convert('L')) for idx in random_idxs]
         labels = [self.IMG_DATA_AUTHOR[idx]['label'].encode() for idx in random_idxs]
        
-        max_width = 192 #[img.shape[1] for img in imgs] 
+        width = [img.shape[1] for img in imgs] 
+        max_width = max(width)
         
         imgs_pad = []
         imgs_wids = []
@@ -150,13 +153,17 @@ class TextDataset():
 
 class TextDatasetval():
 
-    def __init__(self, base_path = DATASET_PATHS, num_examples = 15, target_transform=None):
+    def __init__(self, base_path = DATASET_PATHS, num_examples = NUM_EXAMPLES, target_transform=None):
         
         self.NUM_EXAMPLES = num_examples
-        #base_path = DATASET_PATHS
-        file_to_store = open(base_path, "rb")
-        self.IMG_DATA = pickle.load(file_to_store)['test']
-        self.IMG_DATA  = dict(list( self.IMG_DATA.items()))#[NUM_WRITERS:])
+        
+        base_path = DATASET_PATHS
+        
+        with open(base_path, "rb") as f:
+            data = pickle.load(f)
+        
+
+        self.IMG_DATA  = data['test']
         if 'None' in self.IMG_DATA.keys():
             del self.IMG_DATA['None']
         self.author_id = list(self.IMG_DATA.keys())
@@ -187,7 +194,8 @@ class TextDatasetval():
         imgs = [np.array(self.IMG_DATA_AUTHOR[idx]['img'].convert('L')) for idx in random_idxs]
         labels = [self.IMG_DATA_AUTHOR[idx]['label'].encode() for idx in random_idxs]
        
-        max_width = 192 #[img.shape[1] for img in imgs] 
+        width = [img.shape[1] for img in imgs] 
+        max_width = max(width)
         
         imgs_pad = []
         imgs_wids = []

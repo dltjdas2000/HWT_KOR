@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+# os.environ["CUDA_VISIBLE_DEVICES"]="0"
 #os.environ["WANDB_API_KEY"] = ""
 
 from pathlib import Path
@@ -16,11 +16,8 @@ from scipy import linalg
 from models.model import TRGAN
 from params import *
 from torch import nn
-import wandb
 
 def main():
-
-    wandb.init(project="hwt-final", name = EXP_NAME)
 
     init_project()
 
@@ -53,10 +50,11 @@ def main():
         if not os.path.isdir(MODEL_PATH): os.mkdir(MODEL_PATH)
 
 
-    for epoch in range(EPOCHS):    
-
+    for epoch in range(1, EPOCHS+1):    
+        
         
         start_time = time.time()
+        print(DEVICE)
         
         for i,data in enumerate(dataset): 
 
@@ -90,24 +88,6 @@ def main():
         page = model._generate_page(model.sdata, model.input['swids'])
         page_val = model._generate_page(data_val['simg'].to(DEVICE), data_val['swids'])
 
-        
-        wandb.log({'loss-G': losses['G'],
-                    'loss-D': losses['D'], 
-                    'loss-Dfake': losses['Dfake'],
-                    'loss-Dreal': losses['Dreal'],
-                    'loss-OCR_fake': losses['OCR_fake'],
-                    'loss-OCR_real': losses['OCR_real'],
-                    'loss-w_fake': losses['w_fake'],
-                    'loss-w_real': losses['w_real'],
-                    'epoch' : epoch,
-                    'timeperepoch': end_time-start_time,
-                    
-                    })
-
-                    
-        
-        wandb.log({ "result":[wandb.Image(page, caption="page"),wandb.Image(page_val, caption="page_val")],
-                    })
 
         
 
